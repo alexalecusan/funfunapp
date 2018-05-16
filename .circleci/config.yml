@@ -5,7 +5,7 @@ jobs:
     build:
         working_directory: ~/project
         docker:
-            - image: circleci/node:6.10-browsers
+            - image: circleci/node:7
         steps:
             # Checkout the code from the branch into the working_directory
             - checkout
@@ -28,9 +28,9 @@ jobs:
                 paths:
                     - node_modules
             # Lint the source code
-            - run:
-                name: Linting
-                command: npm run lint
+            # - run:
+            #     name: Linting
+            #     command: npm run lint
             # Test the source code
             - run:
                 name: Testing
@@ -57,7 +57,7 @@ jobs:
     deploy:
         working_directory: ~/project
         docker:
-            - image: circleci/node:6.10-browsers
+            - image: circleci/node:7
         steps:
             # Log the current branch
             - run:
@@ -81,11 +81,11 @@ jobs:
                 name: Deploy to S3
                 command: |
                     if [ "${CIRCLE_BRANCH}" == "develop" ]; then
-                        aws --region eu-west-2 s3 sync dist s3://project-dev/ --delete
+                        aws --region eu-west-1 s3 sync dist s3://project-dev-funapp/ --delete
                     elif [ "${CIRCLE_BRANCH}" == "staging" ]; then
-                        aws --region eu-west-2 s3 sync dist s3://project-qa/ --delete
+                        aws --region eu-west-1 s3 sync dist s3://project-qa-funapp/ --delete
                     elif [ "${CIRCLE_BRANCH}" == "master" ]; then
-                        aws --region eu-west-2 s3 sync dist s3://project/ --delete
+                        aws --region eu-west-1 s3 sync dist s3://project-funapp/ --delete
                     fi
 workflows:
     version: 2
