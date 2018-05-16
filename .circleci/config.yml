@@ -5,7 +5,7 @@ jobs:
     build:
         working_directory: ~/project
         docker:
-            - image: circleci/node:7
+            - image: circleci/node:6.10-browsers
         steps:
             # Checkout the code from the branch into the working_directory
             - checkout
@@ -28,36 +28,36 @@ jobs:
                 paths:
                     - node_modules
             # Lint the source code
-            #- run:
-            #    name: Linting
-            #    command: npm run lint
+            - run:
+                name: Linting
+                command: npm run lint
             # Test the source code
             - run:
                 name: Testing
                 command: npm run test
             # Build project with different configuration based on
             # the current branch
-            # - run:
-            #     name: Building
-            #     command: |
-            #         if [ "${CIRCLE_BRANCH}" == "staging" ]; then
-            #             npm run build-qa
-            #         elif [ "${CIRCLE_BRANCH}" == "master" ]; then
-            #             npm run build-prod
-            #         else
-            #             npm run build-dev
-            #         fi
+            - run:
+                name: Building
+                command: |
+                    if [ "${CIRCLE_BRANCH}" == "staging" ]; then
+                        npm run build-qa
+                    elif [ "${CIRCLE_BRANCH}" == "master" ]; then
+                        npm run build-prod
+                    else
+                        npm run build-dev
+                    fi
             # Cache the dist folder for the deploy job
-            # - save_cache:
-            #     key: v1-dist-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
-            #     paths:
-            #         - dist
+            - save_cache:
+                key: v1-dist-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
+                paths:
+                    - dist
 
     # The deploy job
     deploy:
         working_directory: ~/project
         docker:
-            - image: circleci/node:7
+            - image: circleci/node:6.10-browsers
         steps:
             # Log the current branch
             - run:
@@ -80,8 +80,12 @@ jobs:
             - run:
                 name: Deploy to S3
                 command: |
-                    if [ "${CIRCLE_BRANCH}" == "master" ]; then
-                        aws --region eu-west-1 s3 sync dist s3://project/ --delete
+                    if [ "${CIRCLE_BRANCH}" == "develop" ]; then
+                        aws --region eu-west-2 s3 sync dist s3://project-dev/ --delete
+                    elif [ "${CIRCLE_BRANCH}" == "staging" ]; then
+                        aws --region eu-west-2 s3 sync dist s3://project-qa/ --delete
+                    elif [ "${CIRCLE_BRANCH}" == "master" ]; then
+                        aws --region eu-west-2 s3 sync dist s3://project/ --delete
                     fi
 workflows:
     version: 2
@@ -97,4 +101,6 @@ workflows:
                 filters:
                     branches:
                         only:
-                            - master  
+                            - develop
+                            - staging
+                            - master
